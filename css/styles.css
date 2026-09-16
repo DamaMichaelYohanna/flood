@@ -1,0 +1,143 @@
+/* FloodGuard Custom Styles & Animations */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  --color-safe: #10b981;
+  --color-safe-bg: #ecfdf5;
+  --color-warning: #f59e0b;
+  --color-warning-bg: #fffbeb;
+  --color-danger: #f97316;
+  --color-danger-bg: #fff7ed;
+  --color-critical: #ef4444;
+  --color-critical-bg: #fef2f2;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Glassmorphism Card Style */
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  box-shadow: 0 8px 30px -4px rgba(15, 23, 42, 0.08);
+}
+
+/* Water Level Hero Wave Animation */
+.water-gauge-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%);
+}
+
+.liquid-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  transition: height 1s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.8s ease;
+}
+
+.wave-svg {
+  position: absolute;
+  top: -24px;
+  left: 0;
+  width: 200%;
+  height: 28px;
+  animation: waveMotion 6s linear infinite;
+  fill: inherit;
+}
+
+.wave-svg-2 {
+  position: absolute;
+  top: -20px;
+  left: 0;
+  width: 200%;
+  height: 24px;
+  opacity: 0.5;
+  animation: waveMotion 4s linear infinite reverse;
+  fill: inherit;
+}
+
+@keyframes waveMotion {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Pulse animation for Live status dots */
+.pulse-dot {
+  position: relative;
+}
+
+.pulse-dot::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  transform: translate(-50%, -50%);
+  background-color: inherit;
+  animation: pingPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  opacity: 0.75;
+}
+
+@keyframes pingPulse {
+  75%, 100% {
+    transform: translate(-50%, -50%) scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* Critical Warning Alert Pulse */
+.critical-border-pulse {
+  animation: criticalPulse 1.8s infinite;
+}
+
+@keyframes criticalPulse {
+  0%, 100% {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    border-color: #b91c1c;
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+
+/* Custom Scrollbar for Alert History */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
