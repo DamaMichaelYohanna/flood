@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize Data Providers
   const mockProvider = new MockProvider();
   const restProvider = new RestApiProvider();
+  window.restApiProvider = restProvider;
 
   // Set default provider to Mock Provider
   window.dataService.setProvider(mockProvider);

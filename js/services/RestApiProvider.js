@@ -1,11 +1,24 @@
 /**
  * FloodGuard REST API Provider
- * Connects directly to backend API (Django, FastAPI, Firebase Functions, or NodeMCU direct endpoints).
+ * Connects directly to backend API (Vercel Serverless Functions, Django, FastAPI, or NodeMCU).
  */
 
 class RestApiProvider {
-  constructor(baseUrl = "http://localhost:8000/api") {
-    this.baseUrl = baseUrl.replace(/\/$/, "");
+  constructor(baseUrl = null) {
+    this.storageKey = 'floodguard_custom_api_url';
+    const savedUrl = (typeof localStorage !== 'undefined') ? localStorage.getItem(this.storageKey) : null;
+    
+    if (savedUrl) {
+      this.baseUrl = savedUrl.replace(/\/$/, "");
+    } else if (baseUrl) {
+      this.baseUrl = baseUrl.replace(/\/$/, "");
+    } else if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) {
+      // Auto-detect Vercel deployment domain or current host
+      this.baseUrl = `${window.location.origin}/api`;
+    } else {
+      this.baseUrl = "http://localhost:8000/api";
+    }
+
     this.timer = null;
     this.updateInterval = 3000;
     this.updateCallback = null;
@@ -13,7 +26,17 @@ class RestApiProvider {
   }
 
   setBaseUrl(url) {
+    if (!url) return;
     this.baseUrl = url.replace(/\/$/, "");
+    try {
+      localStorage.setItem(this.storageKey, this.baseUrl);
+    } catch (e) {
+      console.warn("Could not save custom API URL to localStorage", e);
+    }
+  }
+
+  getBaseUrl() {
+    return this.baseUrl;
   }
 
   start(onUpdate) {
@@ -32,6 +55,36 @@ class RestApiProvider {
 
   async poll() {
     try {
+      // 1. Fast path: Attempt unified endpoint (Vercel Serverless /api/readings)
+      try {
+        const unifiedRes = await fetch(`${this.baseUrl}/readings`, {
+          headers: { 'Accept': 'application/json' }
+        });
+        if (unifiedRes.ok) {
+          const data = await unifiedRes.json();
+          if (data && data.reading) {
+            this.isConnected = true;
+            if (this.updateCallback) {
+              this.updateCallback({
+                reading: data.reading,
+                history: data.history || [],
+                alerts: data.alerts || [],
+                deviceStatus: data.deviceStatus || {
+                  station: window.appConfig.getStation(),
+                  deviceOnline: data.reading.deviceOnline,
+                  sensorConnected: data.reading.sensorConnected,
+                  lastCommunication: data.reading.timestamp
+                }
+              });
+            }
+            return;
+          }
+        }
+      } catch (unifiedErr) {
+        // Fallback to separate endpoints below
+      }
+
+      // 2. Legacy path: Fetch separate endpoints (Django/FastAPI style)
       const [reading, history, alerts, deviceStatus] = await Promise.all([
         this.getLatestReading(),
         this.getHistoricalReadings(),
@@ -63,7 +116,7 @@ class RestApiProvider {
             type: 'ERROR',
             severity: 'critical',
             title: 'Connection Problem',
-            description: `Unable to retrieve latest sensor data from API (${this.baseUrl}).`,
+            description: `Unable to retrieve latest sensor data from API (${this.baseUrl}). Please verify that your NodeMCU is posting to this endpoint or check internet connection.`,
             timestamp: new Date().toISOString(),
             timeFormatted: 'Just now',
             resolved: false

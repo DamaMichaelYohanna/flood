@@ -49,6 +49,15 @@ class ThresholdModal {
         }
 
         window.appConfig.saveThresholds({ normal, warning, danger, critical });
+
+        const apiInput = document.getElementById('input-api-base-url');
+        if (apiInput && window.restApiProvider) {
+          const customUrl = apiInput.value.trim();
+          if (customUrl) {
+            window.restApiProvider.setBaseUrl(customUrl);
+          }
+        }
+
         if (this.onSaveCallback) this.onSaveCallback();
         this.close();
       };
@@ -61,11 +70,15 @@ class ThresholdModal {
     const warnInput = document.getElementById('input-threshold-warning');
     const dangInput = document.getElementById('input-threshold-danger');
     const critInput = document.getElementById('input-threshold-critical');
+    const apiInput = document.getElementById('input-api-base-url');
 
     if (normInput) normInput.value = t.normal;
     if (warnInput) warnInput.value = t.warning;
     if (dangInput) dangInput.value = t.danger;
     if (critInput) critInput.value = t.critical;
+    if (apiInput && window.restApiProvider) {
+      apiInput.value = window.restApiProvider.getBaseUrl();
+    }
   }
 
   open() {

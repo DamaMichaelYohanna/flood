@@ -193,23 +193,25 @@ Navigate to `http://localhost:5173/` in your browser.
 
 ## 💻 NodeMCU ESP8266 Firmware (Arduino C++)
 
-Flash the following code to your NodeMCU ESP8266 using the Arduino IDE:
+When deploying your dashboard to **Vercel**, Vercel serves content over **HTTPS**. The NodeMCU ESP8266 must use `WiFiClientSecure` with `client.setInsecure()` to transmit telemetry securely to your dedicated Vercel Serverless API (`https://<your-project>.vercel.app/api/readings`).
+
+Flash the following sketch to your NodeMCU ESP8266 using the Arduino IDE:
 
 ```cpp
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-#include <WiFiClient.h>
+#include <WiFiClientSecure.h>
 
 // Wi-Fi Credentials
 const char* ssid = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PASSWORD";
 
-// Backend API Endpoint
-const char* serverUrl = "http://YOUR_SERVER_IP:8000/api/readings/";
+// Dedicated Vercel Serverless API Endpoint (Replace with your actual Vercel project domain)
+const char* serverUrl = "https://YOUR_PROJECT_NAME.vercel.app/api/readings";
 
 // JSN-SR04T Sensor Pins
-#define TRIG_PIN D1  // GPIO 5
-#define ECHO_PIN D2  // GPIO 4
+#define TRIG_PIN D1  // GPIO 5 (Trigger)
+#define ECHO_PIN D2  // GPIO 4 (Echo)
 
 const float SENSOR_MOUNT_HEIGHT = 3.00; // Sensor distance to dry riverbed (metres)
 
@@ -218,6 +220,7 @@ void setup() {
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
   
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   Serial.print("Connecting to Wi-Fi");
   while (WiFi.status() != WL_CONNECTED) {
@@ -225,6 +228,8 @@ void setup() {
     Serial.print(".");
   }
   Serial.println("\nWi-Fi Connected! NodeMCU Online.");
+  Serial.print("Assigned IP: ");
+  Serial.println(WiFi.localIP());
 }
 
 void loop() {
@@ -243,21 +248,31 @@ void loop() {
     float waterLevel = SENSOR_MOUNT_HEIGHT - distanceM;
     if (waterLevel < 0.0) waterLevel = 0.0;
 
-    Serial.printf("Measured Water Level: %.2f m\n", waterLevel);
+    Serial.printf("Measured Water Level: %.2f m | Distance: %.2f m\n", waterLevel, distanceM);
 
-    // Transmit JSON Telemetry
+    // Transmit JSON Telemetry over HTTPS
     if (WiFi.status() == WL_CONNECTED) {
-      WiFiClient client;
-      HTTPClient http;
-      http.begin(client, serverUrl);
-      http.addHeader("Content-Type", "application/json");
+      WiFiClientSecure client;
+      client.setInsecure(); // Required on ESP8266 to allow HTTPS without bundling root certificates
 
-      String jsonPayload = "{\"stationId\":\"FLOOD-001\",\"waterLevel\":" + String(waterLevel, 2) + 
-                           ",\"deviceOnline\":true,\"sensorConnected\":true}";
-      
-      int httpCode = http.POST(jsonPayload);
-      Serial.printf("HTTP Response: %d\n", httpCode);
-      http.end();
+      HTTPClient http;
+      if (http.begin(client, serverUrl)) {
+        http.addHeader("Content-Type", "application/json");
+
+        String jsonPayload = "{\"stationId\":\"FLOOD-001\","
+                             "\"waterLevel\":" + String(waterLevel, 2) + ","
+                             "\"deviceOnline\":true,"
+                             "\"sensorConnected\":true,"
+                             "\"signalStrength\":" + String(WiFi.RSSI()) + "}";
+        
+        int httpCode = http.POST(jsonPayload);
+        Serial.printf("[HTTP] POST Result Code: %d\n", httpCode);
+        if (httpCode > 0) {
+          String response = http.getString();
+          Serial.println("[HTTP] Server Response: " + response);
+        }
+        http.end();
+      }
     }
   } else {
     Serial.println("Warning: Echo timeout from JSN-SR04T sensor probe.");
