@@ -101,6 +101,40 @@ async function kvSet(key, value) {
   }
 }
 
+/**
+ * Safely read and parse the request body.
+ * Vercel's built-in body parser (micro) throws "Invalid JSON" if Content-Type
+ * is application/json but the body is empty or malformed (common with ESP8266).
+ * This function catches that and falls back to reading the raw stream.
+ */
+async function safeParseBody(req) {
+  // 1. Try Vercel's pre-parsed req.body (may throw "Invalid JSON")
+  try {
+    if (req.body !== undefined && req.body !== null) {
+      if (typeof req.body === "object") return req.body;
+      if (typeof req.body === "string" && req.body.length > 0) {
+        return JSON.parse(req.body);
+      }
+    }
+  } catch (e) {
+    // req.body threw or JSON.parse failed — fall through to raw stream
+  }
+
+  // 2. Fallback: read the raw body from the request stream
+  try {
+    const chunks = [];
+    for await (const chunk of req) {
+      chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+    }
+    const raw = Buffer.concat(chunks).toString("utf-8").trim();
+    if (raw.length === 0) return {};
+    return JSON.parse(raw);
+  } catch (e) {
+    // Completely unreadable — return empty object so the POST still succeeds
+    return {};
+  }
+}
+
 module.exports = async function handler(req, res) {
   // Global CORS Headers
   res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -128,15 +162,7 @@ module.exports = async function handler(req, res) {
   // -------------------------------------------------------------
   if (req.method === "POST") {
     try {
-      let body = req.body;
-      if (typeof body === "string") {
-        try {
-          body = JSON.parse(body);
-        } catch (e) {
-          body = {};
-        }
-      }
-      body = body || {};
+      const body = await safeParseBody(req);
 
       const rawLevel = parseFloat(body.waterLevel);
       const waterLevel = isNaN(rawLevel) ? latestReading.waterLevel : Math.max(0, parseFloat(rawLevel.toFixed(2)));
