@@ -1,0 +1,6 @@
+{
+  "name": "floodguard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "IoT-Based Flood Early Warning System — NodeMCU ESP8266 + Vercel Serverless API"
+}

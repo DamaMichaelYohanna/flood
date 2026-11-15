@@ -1,10 +1,8 @@
 {
-  "version": 2,
   "rewrites": [
-    { "source": "/api/readings/latest/?", "destination": "/api/readings?type=latest" },
-    { "source": "/api/readings/history/?", "destination": "/api/readings?type=history" },
-    { "source": "/api/alerts/?", "destination": "/api/readings?type=alerts" },
-    { "source": "/api/device/status/?", "destination": "/api/readings?type=device" },
-    { "source": "/api/readings/?", "destination": "/api/readings" }
+    { "source": "/api/readings/latest", "destination": "/api/readings?type=latest" },
+    { "source": "/api/readings/history", "destination": "/api/readings?type=history" },
+    { "source": "/api/alerts", "destination": "/api/readings?type=alerts" },
+    { "source": "/api/device/status", "destination": "/api/readings?type=device" }
   ]
 }
