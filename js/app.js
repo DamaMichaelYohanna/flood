@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
   iotPipelineModal.init();
 
   // Subscribe UI to DataService updates
-  window.dataService.subscribe(({ reading, history, alerts, deviceStatus }) => {
+  window.dataService.subscribe(({ reading, history, alerts, deviceStatus, rawApiResponse }) => {
     waterGauge.render(reading);
     riskStatus.render(reading);
     statisticCards.render(history, reading);
@@ -45,10 +45,26 @@ document.addEventListener('DOMContentLoaded', () => {
     deviceHealth.render(deviceStatus);
     monitoringStation.render(deviceStatus);
     alertList.render(alerts);
+    renderRawApiResponse(rawApiResponse);
 
     // Update Header Status Indicator
     updateHeaderStatus(reading, deviceStatus);
   });
+
+  function renderRawApiResponse(rawApiResponse) {
+    const output = document.getElementById('raw-api-response');
+    const meta = document.getElementById('raw-api-response-meta');
+    if (!output || !meta) return;
+
+    if (!rawApiResponse) {
+      output.textContent = 'Raw API response is available when Live Device API is selected.';
+      meta.textContent = 'No live API response';
+      return;
+    }
+
+    output.textContent = JSON.stringify(rawApiResponse, null, 2);
+    meta.textContent = `Last fetched: ${new Date().toLocaleTimeString()}`;
+  }
 
   function updateHeaderStatus(reading, deviceStatus) {
     const statusDot = document.getElementById('header-status-dot');

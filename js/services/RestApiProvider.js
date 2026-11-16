@@ -70,6 +70,7 @@ class RestApiProvider {
                 reading: reading,
                 history: data.history || [],
                 alerts: data.alerts || [],
+                rawApiResponse: data,
                 deviceStatus: data.deviceStatus || {
                   station: window.appConfig.getStation(),
                   deviceOnline: reading.deviceOnline,
@@ -97,7 +98,13 @@ class RestApiProvider {
 
       this.isConnected = true;
       if (this.updateCallback) {
-        this.updateCallback({ reading, history, alerts, deviceStatus });
+        this.updateCallback({
+          reading,
+          history,
+          alerts,
+          deviceStatus,
+          rawApiResponse: { reading, history, alerts, deviceStatus }
+        });
       }
     } catch (err) {
       console.warn("RestApiProvider poll error:", err);
@@ -129,7 +136,8 @@ class RestApiProvider {
             deviceOnline: false,
             sensorConnected: false,
             lastCommunication: null
-          }
+          },
+          rawApiResponse: null
         });
       }
     }
