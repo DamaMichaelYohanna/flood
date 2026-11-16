@@ -115,6 +115,9 @@ $$\text{Rate of Rise} = \frac{\Delta \text{Water Level}}{\Delta \text{Time (10-m
   - Incident log buffer with threshold crossing timestamps and optional Web Audio API audio chimes.
 * **Threshold Settings Modal**:
   - Real-time configurable threshold boundaries saved to `localStorage`.
+* **Live Device Data**:
+  - The dashboard starts with the deployed Vercel API (`https://iot-flood.vercel.app/api`) selected.
+  - Select **Simulated Engine** in the source control to use the classroom/demo scenarios.
 
 ---
 

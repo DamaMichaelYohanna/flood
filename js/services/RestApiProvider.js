@@ -12,11 +12,11 @@ class RestApiProvider {
       this.baseUrl = savedUrl.replace(/\/$/, "");
     } else if (baseUrl) {
       this.baseUrl = baseUrl.replace(/\/$/, "");
-    } else if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) {
-      // Auto-detect Vercel deployment domain or current host
+    } else if (typeof window !== 'undefined' && window.location && window.location.hostname === 'iot-flood.vercel.app') {
       this.baseUrl = `${window.location.origin}/api`;
     } else {
-      this.baseUrl = "http://localhost:8000/api";
+      // Use the deployed station API when the dashboard is opened locally.
+      this.baseUrl = "https://iot-flood.vercel.app/api";
     }
 
     this.timer = null;
@@ -62,18 +62,21 @@ class RestApiProvider {
         });
         if (unifiedRes.ok) {
           const data = await unifiedRes.json();
-          if (data && data.reading) {
+          const reading = data && (data.reading || data.received || data);
+          if (reading && typeof reading.waterLevel === 'number') {
             this.isConnected = true;
             if (this.updateCallback) {
               this.updateCallback({
-                reading: data.reading,
+                reading: reading,
                 history: data.history || [],
                 alerts: data.alerts || [],
                 deviceStatus: data.deviceStatus || {
                   station: window.appConfig.getStation(),
-                  deviceOnline: data.reading.deviceOnline,
-                  sensorConnected: data.reading.sensorConnected,
-                  lastCommunication: data.reading.timestamp
+                  deviceOnline: reading.deviceOnline,
+                  sensorConnected: reading.sensorConnected,
+                  signalStrength: reading.signalStrength,
+                  batteryVoltage: reading.batteryVoltage,
+                  lastCommunication: reading.timestamp
                 }
               });
             }

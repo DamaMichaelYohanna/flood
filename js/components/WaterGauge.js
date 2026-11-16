@@ -14,6 +14,9 @@ class WaterGauge {
     const thresholds = window.appConfig.getThresholds();
     const waterLevel = reading && typeof reading.waterLevel === 'number' ? reading.waterLevel : 0;
     const isOnline = reading && reading.deviceOnline && reading.sensorConnected;
+    const readingTimestamp = reading && reading.timestamp
+      ? new Date(reading.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'medium' })
+      : 'Unavailable';
 
     // Calculate fill percentage relative to max gauge capacity (2.50m default)
     const maxCapacity = thresholds.maxGauge || 2.50;
@@ -144,7 +147,7 @@ class WaterGauge {
         <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs text-slate-400 z-10 mt-4">
           <span class="flex items-center gap-1.5" id="water-last-updated-text">
             <i data-lucide="clock" class="w-3.5 h-3.5"></i>
-            Updated just now
+            Device packet: ${isOnline ? readingTimestamp : 'Unavailable'}
           </span>
           <span class="font-mono text-slate-500">
             Station: ${window.appConfig.getStation().id}

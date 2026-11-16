@@ -20,8 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const restProvider = new RestApiProvider();
   window.restApiProvider = restProvider;
 
-  // Set default provider to Mock Provider
-  window.dataService.setProvider(mockProvider);
+  // Live telemetry is the default; the simulator remains available from the source selector.
+  window.dataService.setProvider(restProvider);
 
   // Initialize Modals
   thresholdModal.init(() => {
@@ -87,8 +87,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const navTabSettings = document.getElementById('nav-tab-settings');
 
   if (demoToggle) {
+    demoToggle.checked = false;
     demoToggle.onchange = (e) => {
       mockProvider.setDemoActive(e.target.checked);
+      if (dataSourceSelect) {
+        dataSourceSelect.value = e.target.checked ? 'mock' : 'rest';
+        window.dataService.setProvider(e.target.checked ? mockProvider : restProvider);
+      }
       const banner = document.getElementById('demo-mode-banner');
       if (banner) {
         banner.style.display = e.target.checked ? 'flex' : 'none';
@@ -143,10 +148,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // Data Source Provider Selector (Mock vs REST API)
   const dataSourceSelect = document.getElementById('data-source-select');
   if (dataSourceSelect) {
+    dataSourceSelect.value = 'rest';
     dataSourceSelect.onchange = (e) => {
       if (e.target.value === 'rest') {
+        if (demoToggle) demoToggle.checked = false;
+        const banner = document.getElementById('demo-mode-banner');
+        if (banner) banner.style.display = 'none';
         window.dataService.setProvider(restProvider);
       } else {
+        if (demoToggle) demoToggle.checked = true;
+        const banner = document.getElementById('demo-mode-banner');
+        if (banner) banner.style.display = 'flex';
         window.dataService.setProvider(mockProvider);
       }
     };
@@ -170,6 +182,4 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // Initial trigger
-  mockProvider.tick();
 });
